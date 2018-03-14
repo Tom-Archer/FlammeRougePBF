@@ -1,0 +1,21 @@
+[b]IMPORTANT[/b]
+If you notice anything weird in your hand or deck (energy, recycle & discard piles), let me know so I can look into it. This is essentially an alpha test so I'm sitting out to make sure the wheels don't fall off (ahem), but in future I may join in!
+
+Additionally, while the code manages the decks, I'll be managing the Flamme Rouge rules and moving players, so if I mess up please shout!
+
+For those that are interested, the code that looks after the decks is [here](https://github.com/Tom-Archer/FlammeRougePBF).
+
+The 'information-game' differs a little from standard Flamme Rouge in that normally you'd have to remember what cards other riders have been playing but in PBD that information is accessible in previous forum posts. So that everyone has access to the same information I'll be displaying every rider's remaining cards at the end of each movement phase. I don't know how much people will use it, but it's there if people want to be really 'mathsy'.
+
+[b]RULES[/b]
+The Flamme Rouge boardgame rules can be found [here](https://www.lautapelit.fi/Flamme_Rouge_EN_DE_FR_ES). We will be playing the base game for this initial stage. Subsequent games may include the [i]Grand Tour[/i] and [i]Peloton[/i] expansions.
+
+As per the Flamme Rouge boardgame, you play your turn as normal but there are some additional rules:
+1. Please only look at one of your riders at a time. Choose a card and then look at your remaining rider.
+2. Please don't look into the other players spoiler tags, at least not until the game is over.
+3. Post all rider movements using the `[detail]` tag, preferably in the format, `r4 s5` or `s5 r4`.
+4. No editing your move once it's been made. (If you really cock something up, let me know.)
+5. No sugar!
+
+[b]THANKS[/b]
+Many thanks to [grautur](https://boardgamegeek.com/user/grautur) over on the BGG Forums. Writing my code was a lot easier after following some of the games he's run over there. He also kindly provided me with his track & cyclist art.
