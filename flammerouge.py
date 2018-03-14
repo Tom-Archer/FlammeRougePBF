@@ -1,8 +1,16 @@
-import random
+import math
 import pickle
+import random
+from enum import Enum
 
 # Determines whether decks are kept secret in the Energy and Movement Phases
 KEEP_DECK_SECRET = False
+
+class Format(Enum):
+	BBCODE = 1
+	DISCOURSE = 2
+	
+FORMAT = Format.DISCOURSE
 
 class Decklist:
 	def __init__(self, cards):
@@ -12,9 +20,9 @@ class Decklist:
 		self.drawn_cards =  []
 		random.shuffle(self.energy_pile)
 		
-	def add_card(self, card_name):
-		# Add a card to the recycle pile
-		self.recycle_pile.append(str(card_name))
+	def add_exhaustion(self):
+		# Add an exhaustion card to the recycle pile
+		self.recycle_pile.append("e2")
 		
 	def shuffle_recycle(self):
 		# Shuffle the recycle pile into the draw pile
@@ -46,6 +54,22 @@ class Decklist:
 			
 		return (sorted(self.drawn_cards), message)
 		
+	def perform_end_of_stage_actions(self):
+		# Remove any exhaustion cards in the discard pile
+		self.discard_pile = [c for c in self.discard_pile if c != "e2"]
+		# Merge the drawn_cards & recycle_pile into the energy_pile
+		self.energy_pile += self.recycle_pile + self.drawn_cards + self.discard_pile
+		self.recycle_pile = []
+		self.drawn_cards = []
+		self.discard_pile = []
+		# Remove half of the exhaustion cards
+		self.energy_pile.sort()
+		ex_count = self.energy_pile.count("e2")
+		for i in range(0, ex_count - math.ceil(ex_count / 2.0)):
+			self.energy_pile.remove("e2")
+		# Shuffle the deck
+		random.shuffle(self.energy_pile)	
+		
 	def play_card(self, card_name):
 		# Take the played card from the drawn cards and recycle the drawn cards
 		if card_name in self.drawn_cards:
@@ -67,7 +91,7 @@ class Decklist:
 	
 	def __str__(self):
 		# This gives the behind the scenes info
-		return "Hand: {0} - Energy: {1} - Recycle: {2}\n".format(",".join(self.drawn_cards), ",".join(self.energy_pile), ",".join(self.recycle_pile))
+		return "Hand: {0} - Energy: {1} - Recycle: {2} - Discard: {3}\n".format(",".join(self.drawn_cards), ",".join(self.energy_pile), ",".join(self.recycle_pile), ",".join(self.discard_pile))
 	
 class Rider(Decklist):
 	def __init__(self, name, short_name, deck_list):
@@ -95,6 +119,15 @@ class Team:
 					rider.play_card(rider_string[1:])
 					break
 		
+	def add_s(self, add_string):
+		# Take a shorthand string and add exhaustion to those riders
+		rider_strings = add_string.split(' ')
+		for rider_string in rider_strings:
+			for rider in self.riders:
+				if rider_string[0].upper() == rider.short_name:
+					rider.add_exhaustion()
+					break
+		
 	def __str__(self):
 		display_string = "{0}\n".format(self.name)
 		for rider in self.riders:
@@ -105,6 +138,15 @@ class Stage:
 	def __init__(self, name=""):
 		self.name = name
 		self.team_dict = {}
+		
+	def from_stage(self, previous_stage):
+		# Take the result of the previous stage and create this new stage
+		self.team_dict = previous_stage.team_dict
+		# Sort out all the decks
+		for team_name in self.team_dict.keys():
+			team = self.team_dict[team_name]
+			for rider in team.riders:
+				rider.perform_end_of_stage_actions()
 		
 	def add_team(self, team_name, team_colour):
 		self.team_dict[team_name] = Team(team_name, team_colour)
@@ -118,19 +160,30 @@ class Stage:
 		for team_name in self.team_dict.keys():
 			
 			team = self.team_dict[team_name]
-			display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
+			if FORMAT == Format.DISCOURSE:
+				display_string += "[b]{0}[/b]\n".format(team.name)
+			else:
+				display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
 			
 			for rider in team.riders:
 				(rider_hand, rider_msg) = rider.draw_cards()
 				(rider_energy, rider_recycle) = (rider.energy_pile, rider.recycle_pile)
-				
-				display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider_msg)
-				if KEEP_DECK_SECRET:
-					display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(rider_hand), ",".join(rider_recycle))
+
+				if FORMAT == Format.DISCOURSE:
+					display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider_msg)
+					if KEEP_DECK_SECRET:
+						display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(rider_hand), ",".join(rider_recycle))
+					else:
+						display_string += "[b]Hand: {0}[/b] - Draw: {1} - Recycle: {2}\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+					display_string += "[/details]\n"
 				else:
-					display_string += "[o][b]Hand: {0}[/b] - Draw: {1} - Recycle: {2}[/o]\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+					display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider_msg)
+					if KEEP_DECK_SECRET:
+						display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(rider_hand), ",".join(rider_recycle))
+					else:
+						display_string += "[o][b]Hand: {0}[/b] - Draw: {1} - Recycle: {2}[/o]\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
 				
-			display_string += "\n"
+				display_string += "\n"
 
 		return display_string
 		
@@ -140,16 +193,24 @@ class Stage:
 		for team_name in self.team_dict.keys():
 		
 			team = self.team_dict[team_name]
-			display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
+			if FORMAT == Format.DISCOURSE:
+				display_string += "[b]{0}[/b]\n".format(team.name)
+			else:
+				display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
 			
 			for rider in team.riders:
 				(rider_card, rider_deck) = (rider.get_last_card_played(), rider.get_deck_list())
+				
 				display_string += "{0}:\n".format(rider.name)
 				if KEEP_DECK_SECRET:
 					display_string += "[b]Card Played: {0}[/b]\n".format(str(rider_card))
 				else:
 					display_string += "[b]Card Played: {0}[/b] - Deck: {1}\n".format(str(rider_card), ",".join(rider_deck))
-			display_string += "[/COLOR]\n\n"
+				
+			if FORMAT == Format.DISCOURSE:
+				display_string += "\n\n"
+			else:
+				display_string += "[/COLOR]\n\n"
 				
 		return display_string
 
@@ -171,18 +232,22 @@ def store_stage(filename, stage):
 if __name__ == "__main__":
 
 	stage = Stage("Stage #1")
-	stage.add_team("Team1", "#FF0000")
-	stage.add_team("Team2", "#00FF00")
+	stage.add_team("Red",  "#FF0000")
+	stage.add_team("Blue", "#0000FF")
+	
+	red_team = stage.get_team("Red") 
+	blue_team = stage.get_team("Blue") 
 	
 	print(stage)
 	print(stage.output_next_turn())
-	print(stage)
 	
-	red_team = stage.get_team("Team1")
-	#red_team.play_s("re2")
 	red_team.riders[0].play_card(red_team.riders[0].drawn_cards[0])
-	red_team.riders[0].add_card("e2")
+	#red_team.play_s("re2")
+	red_team.add_s("r r r r")
+	print(stage.output_last_turn())	
 	
-	print(stage.output_last_turn())
-	print(stage)
-
+	#red_team.riders[0].discard_pile.append("e2")
+	#red_team.riders[0].discard_pile.append("e2")
+	#stage2 = Stage("Stage #2")
+	#stage2.from_stage(stage)
+	#print(stage2)
