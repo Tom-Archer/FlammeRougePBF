@@ -138,6 +138,7 @@ class Stage:
 	def __init__(self, name=""):
 		self.name = name
 		self.team_dict = {}
+		self.turn_number = 0
 		
 	def from_stage(self, previous_stage):
 		# Take the result of the previous stage and create this new stage
@@ -154,9 +155,11 @@ class Stage:
 	def get_team(self, team_name):
 		return self.team_dict[team_name]
 	
-	def output_next_turn(self):
-		display_string = ""
-		# Prints out the next round
+	def output_energy_phase(self):
+		# Outputs the next energy phase
+		self.turn_number += 1
+		display_string = "[b][u]Turn {0} - Energy Phase[/u][/b]\n\n".format(self.turn_number)
+		
 		for team_name in self.team_dict.keys():
 			
 			team = self.team_dict[team_name]
@@ -174,22 +177,26 @@ class Stage:
 					if KEEP_DECK_SECRET:
 						display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(rider_hand), ",".join(rider_recycle))
 					else:
-						display_string += "[b]Hand: {0}[/b] - Draw: {1} - Recycle: {2}\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+						display_string += "[b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
 					display_string += "[/details]\n"
 				else:
 					display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider_msg)
 					if KEEP_DECK_SECRET:
 						display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(rider_hand), ",".join(rider_recycle))
 					else:
-						display_string += "[o][b]Hand: {0}[/b] - Draw: {1} - Recycle: {2}[/o]\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+						display_string += "[o][b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}[/o]\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
 				
 				display_string += "\n"
 
+		with open("energy_{0}.txt".format(self.turn_number), 'w') as f:
+			f.write(display_string)
 		return display_string
 		
-	def output_last_turn(self):
-		display_string = ""
-		# Prints out the last round of actions
+	def output_movement_phase(self):
+		# Outputs the last movement phase
+		display_string = "[b][u]Turn {0} - Movement Phase[/u][/b]\n".format(self.turn_number)
+		display_string += "Numbers in brackets are how many spaces the cyclist actually moved (if blocked or because of ascents/descents)\n\n"
+		
 		for team_name in self.team_dict.keys():
 		
 			team = self.team_dict[team_name]
@@ -211,7 +218,17 @@ class Stage:
 				display_string += "\n\n"
 			else:
 				display_string += "[/COLOR]\n\n"
-				
+		
+		display_string += "Positions (before slipstream):\n"
+		display_string += "**INSERT IMAGE HERE**\n\n"
+		
+		display_string += "[b][u]Turn {0} - End Phase[/u][/b]\n".format(self.turn_number)
+		display_string += "Positions (after slipstream):\n"
+		display_string += "**INSERT IMAGE HERE**\n\n"
+		display_string += "[b]Exhaustion card(s):[/b]"
+		
+		with open("movement_{0}.txt".format(self.turn_number), 'w') as f:
+			f.write(display_string)		
 		return display_string
 
 	def __str__(self):
@@ -239,12 +256,13 @@ if __name__ == "__main__":
 	blue_team = stage.get_team("Blue") 
 	
 	print(stage)
-	print(stage.output_next_turn())
+	print(stage.output_energy_phase())
 	
-	red_team.riders[0].play_card(red_team.riders[0].drawn_cards[0])
-	#red_team.play_s("re2")
+	#red_team.riders[0].play_card(red_team.riders[0].drawn_cards[0])
+	red_team.play_s("r"+red_team.riders[0].drawn_cards[0])
 	red_team.add_s("r r r r")
-	print(stage.output_last_turn())	
+	print(stage)
+	print(stage.output_movement_phase())	
 	
 	#red_team.riders[0].discard_pile.append("e2")
 	#red_team.riders[0].discard_pile.append("e2")
