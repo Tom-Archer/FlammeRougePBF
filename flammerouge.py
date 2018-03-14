@@ -34,26 +34,28 @@ class Decklist:
 		# Take 4 cards from the top of the draw pile 
 		# If player has 4 cards remaining just give them all the cards
 		# Else, Shuffle the recycle pile if not enough cards
+		if len(self.drawn_cards) > 0:
+			print("The draw deck is not empty!")
+			return
+		
 		self.drawn_cards = []
-		message = ""
+		self.message = ""
 		
 		if len(self.energy_pile) >= 4:
 			for i in range(0,4):
 				self.drawn_cards.append(self.energy_pile.pop(0))
 		elif len(self.energy_pile) + len(self.recycle_pile) < 4:
-			message = "(4 or fewer cards left in deck)"
+			self.message = "(4 or fewer cards left in deck)"
 			self.drawn_cards = self.energy_pile + self.recycle_pile
 			self.energy_pile = []
 			self.recycle_pile = []
 		else:
-			message = "(Deck got shuffled)"
+			self.message = "(Deck got shuffled)"
 			self.drawn_cards = self.energy_pile
 			self.shuffle_recycle()
 			for i in range(0,4-len(self.drawn_cards)):
 				self.drawn_cards.append(self.energy_pile.pop(0))
-			
-		return (sorted(self.drawn_cards), message)
-		
+					
 	def perform_end_of_stage_actions(self):
 		# Remove any exhaustion cards in the discard pile
 		self.discard_pile = [c for c in self.discard_pile if c != "e2"]
@@ -155,9 +157,16 @@ class Stage:
 	def get_team(self, team_name):
 		return self.team_dict[team_name]
 	
-	def output_energy_phase(self):
-		# Outputs the next energy phase
+	def perform_energy_phase(self):
+		# Performs card draws for each rider
 		self.turn_number += 1
+		for team_name in self.team_dict.keys():
+			team = self.team_dict[team_name]
+			for rider in team.riders:
+				rider.draw_cards()
+				
+	def output_energy_phase(self):
+		# Outputs the last energy phase
 		display_string = "[b][u]Turn {0} - Energy Phase[/u][/b]\n\n".format(self.turn_number)
 		
 		for team_name in self.team_dict.keys():
@@ -169,22 +178,20 @@ class Stage:
 				display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
 			
 			for rider in team.riders:
-				(rider_hand, rider_msg) = rider.draw_cards()
-				(rider_energy, rider_recycle) = (rider.energy_pile, rider.recycle_pile)
 
 				if FORMAT == Format.DISCOURSE:
-					display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider_msg)
+					display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider.message)
 					if KEEP_DECK_SECRET:
-						display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(rider_hand), ",".join(rider_recycle))
+						display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.recycle_pile)))
 					else:
-						display_string += "[b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+						display_string += "[b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
 					display_string += "[/details]\n"
 				else:
-					display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider_msg)
+					display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider.message)
 					if KEEP_DECK_SECRET:
-						display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(rider_hand), ",".join(rider_recycle))
+						display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(sorted(rider.drawn_cards))), ",".join(sorted(rider.recycle_pile))
 					else:
-						display_string += "[o][b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}[/o]\n".format(",".join(rider_hand), ",".join(sorted(rider_energy)), ",".join(sorted(rider_recycle)))
+						display_string += "[o][b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}[/o]\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
 				
 				display_string += "\n"
 
@@ -256,6 +263,8 @@ if __name__ == "__main__":
 	blue_team = stage.get_team("Blue") 
 	
 	print(stage)
+	stage.perform_energy_phase()
+	print(stage.output_energy_phase())
 	print(stage.output_energy_phase())
 	
 	#red_team.riders[0].play_card(red_team.riders[0].drawn_cards[0])
