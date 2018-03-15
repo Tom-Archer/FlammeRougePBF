@@ -24,10 +24,21 @@ class Decklist:
 		# Add an exhaustion card to the recycle pile
 		self.recycle_pile.append("e2")
 		
-	def shuffle_recycle(self):
+	def _shuffle_recycle(self):
 		# Shuffle the recycle pile into the draw pile
 		self.energy_pile = self.recycle_pile
 		self.recycle_pile = []
+		random.shuffle(self.energy_pile)
+		
+	def shuffle_deck(self, include_discard = True):
+		# Shuffle deck (and optionally the discard pile)
+		if include_discard:
+			self.energy_pile += self.recycle_pile + self.drawn_cards + self.discard_pile
+			self.discard_pile = []
+		else:
+			self.energy_pile += self.recycle_pile + self.drawn_cards
+		self.recycle_pile = []
+		self.drawn_cards = []
 		random.shuffle(self.energy_pile)
 		
 	def draw_cards(self):
@@ -35,7 +46,7 @@ class Decklist:
 		# If player has 4 cards remaining just give them all the cards
 		# Else, Shuffle the recycle pile if not enough cards
 		if len(self.drawn_cards) > 0:
-			print("The draw deck is not empty!")
+			print("The player is currently holding cards!")
 			return
 		
 		self.drawn_cards = []
@@ -52,18 +63,17 @@ class Decklist:
 		else:
 			self.message = "(Deck got shuffled)"
 			self.drawn_cards = self.energy_pile
-			self.shuffle_recycle()
+			self._shuffle_recycle()
 			for i in range(0,4-len(self.drawn_cards)):
 				self.drawn_cards.append(self.energy_pile.pop(0))
 					
 	def perform_end_of_stage_actions(self):
+		# Reset breakaway flag
+		self.in_breakaway = False
 		# Remove any exhaustion cards in the discard pile
 		self.discard_pile = [c for c in self.discard_pile if c != "e2"]
-		# Merge the drawn_cards & recycle_pile into the energy_pile
-		self.energy_pile += self.recycle_pile + self.drawn_cards + self.discard_pile
-		self.recycle_pile = []
-		self.drawn_cards = []
-		self.discard_pile = []
+		# Move all cards back into the energy_pile
+		self.shuffle_deck(True)
 		# Remove half of the exhaustion cards
 		self.energy_pile.sort()
 		ex_count = self.energy_pile.count("e2")
@@ -80,7 +90,7 @@ class Decklist:
 			self.recycle_pile += self.drawn_cards
 			self.drawn_cards = []
 		else:
-			print("The played card {0} was not in the list of drawn cards!".format(card_name))
+			print("The played card '{0}' was not in the list of drawn cards!".format(card_name))
 	
 	def get_last_card_played(self):
 		# Return the last played card
@@ -100,6 +110,7 @@ class Rider(Decklist):
 		super().__init__(deck_list)
 		self.name = name
 		self.short_name = short_name
+		self.in_breakaway = False
 		
 	def __str__(self):
 		return super().__str__()
@@ -108,31 +119,31 @@ class Team:
 	def __init__(self, name, colour):
 		self.name = name
 		self.colour = colour
-		self.riders = []
-		self.riders.append(Rider("Rouleur", "R", [3,3,3,4,4,4,5,5,5,6,6,6,7,7,7]))
-		self.riders.append(Rider("Sprinteur", "S", [2,2,2,3,3,3,4,4,4,5,5,5,9,9,9]))
+		self.riders = {}
+		self.riders["R"] = Rider("Rouleur", "R", [3,3,3,4,4,4,5,5,5,6,6,6,7,7,7])
+		self.riders["S"] = Rider("Sprinteur", "S", [2,2,2,3,3,3,4,4,4,5,5,5,9,9,9])
 
 	def play_s(self, play_string):
 		# Take a shorthand string and play those cards
+		# eg. "s5 r4"
 		rider_strings = play_string.split(' ')
 		for rider_string in rider_strings:
-			for rider in self.riders:
-				if rider_string[0].upper() == rider.short_name:
-					rider.play_card(rider_string[1:])
-					break
+			if rider_string[0].upper() in self.riders:
+				rider = self.riders[rider_string[0].upper()]
+				rider.play_card(rider_string[1:])
 		
 	def add_s(self, add_string):
 		# Take a shorthand string and add exhaustion to those riders
+		# eg. "s r"
 		rider_strings = add_string.split(' ')
 		for rider_string in rider_strings:
-			for rider in self.riders:
-				if rider_string[0].upper() == rider.short_name:
-					rider.add_exhaustion()
-					break
+			if rider_string[0].upper() in self.riders:
+				rider = self.riders[rider_string[0].upper()]
+				rider.add_exhaustion()
 		
 	def __str__(self):
 		display_string = "{0}\n".format(self.name)
-		for rider in self.riders:
+		for short, rider in self.riders.items():
 			display_string += "{0}:\n{1}\n".format(rider.name, rider)
 		return display_string
 		
@@ -141,14 +152,14 @@ class Stage:
 		self.name = name
 		self.team_dict = {}
 		self.turn_number = 0
+		self.bid_number = 0
 		
 	def from_stage(self, previous_stage):
 		# Take the result of the previous stage and create this new stage
 		self.team_dict = previous_stage.team_dict
 		# Sort out all the decks
-		for team_name in self.team_dict.keys():
-			team = self.team_dict[team_name]
-			for rider in team.riders:
+		for team_name, team in self.team_dict.items():
+			for short, rider in team.riders.items():
 				rider.perform_end_of_stage_actions()
 		
 	def add_team(self, team_name, team_colour):
@@ -156,75 +167,68 @@ class Stage:
 	
 	def get_team(self, team_name):
 		return self.team_dict[team_name]
+
+	def perform_breakaway_energy_phase(self):
+		# Perform breakaway if stage hasn't begun
+		if (self.turn_number == 0):
+			self.bid_number += 1
+			
+			for team_name, team in self.team_dict.items():
+				for short, rider in team.riders.items():
+					if self.bid_number == 1:
+						# Draw cards for all riders as if this was an energy phase
+						rider.draw_cards()
+					elif self.bid_number == 2:
+						if rider.in_breakaway:
+							# Draw cards for all riders in breakaway
+							rider.draw_cards()
+
+	def output_breakaway_energy_phase(self):
+		# Outputs the last breakaway energy phase
+		display_string = "[b][u]Breakaway Turn {0} - Energy Phase[/u][/b]\n\n".format(self.bid_number)
+		
+		if self.bid_number == 1:
+			display_string = self._output_energy_phase(display_string, False)
+		elif self.bid_number == 2:
+			display_string = self._output_energy_phase(display_string, True)
+		
+		with open("break_energy_{0}.txt".format(self.bid_number), 'w') as f:
+			f.write(display_string)
+		return display_string
 	
+	def output_breakaway_bid_phase(self):
+		# Outputs the last breakaway bid phase
+		display_string = "[b][u]Breakaway Turn {0} - Bid Phase[/u][/b]\n\n".format(self.bid_number)
+		
+		display_string = self._output_movement_phase(display_string, True)
+			
+		with open("break_bid_{0}.txt".format(self.bid_number), 'w') as f:
+			f.write(display_string)
+		return display_string
+		
 	def perform_energy_phase(self):
 		# Performs card draws for each rider
 		self.turn_number += 1
-		for team_name in self.team_dict.keys():
-			team = self.team_dict[team_name]
-			for rider in team.riders:
+		for team_name, team in self.team_dict.items():
+			for short, rider in team.riders.items():
 				rider.draw_cards()
-				
+
 	def output_energy_phase(self):
 		# Outputs the last energy phase
 		display_string = "[b][u]Turn {0} - Energy Phase[/u][/b]\n\n".format(self.turn_number)
 		
-		for team_name in self.team_dict.keys():
-			
-			team = self.team_dict[team_name]
-			if FORMAT == Format.DISCOURSE:
-				display_string += "[b]{0}[/b]\n".format(team.name)
-			else:
-				display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
-			
-			for rider in team.riders:
-
-				if FORMAT == Format.DISCOURSE:
-					display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider.message)
-					if KEEP_DECK_SECRET:
-						display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.recycle_pile)))
-					else:
-						display_string += "[b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
-					display_string += "[/details]\n"
-				else:
-					display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider.message)
-					if KEEP_DECK_SECRET:
-						display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(sorted(rider.drawn_cards))), ",".join(sorted(rider.recycle_pile))
-					else:
-						display_string += "[o][b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}[/o]\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
-				
-				display_string += "\n"
+		display_string = self._output_energy_phase(display_string, False)
 
 		with open("energy_{0}.txt".format(self.turn_number), 'w') as f:
 			f.write(display_string)
 		return display_string
-		
+	
 	def output_movement_phase(self):
 		# Outputs the last movement phase
 		display_string = "[b][u]Turn {0} - Movement Phase[/u][/b]\n".format(self.turn_number)
 		display_string += "Numbers in brackets are how many spaces the cyclist actually moved (if blocked or because of ascents/descents)\n\n"
 		
-		for team_name in self.team_dict.keys():
-		
-			team = self.team_dict[team_name]
-			if FORMAT == Format.DISCOURSE:
-				display_string += "[b]{0}[/b]\n".format(team.name)
-			else:
-				display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
-			
-			for rider in team.riders:
-				(rider_card, rider_deck) = (rider.get_last_card_played(), rider.get_deck_list())
-				
-				display_string += "{0}:\n".format(rider.name)
-				if KEEP_DECK_SECRET:
-					display_string += "[b]Card Played: {0}[/b]\n".format(str(rider_card))
-				else:
-					display_string += "[b]Card Played: {0}[/b] - Deck: {1}\n".format(str(rider_card), ",".join(rider_deck))
-				
-			if FORMAT == Format.DISCOURSE:
-				display_string += "\n\n"
-			else:
-				display_string += "[/COLOR]\n\n"
+		display_string = self._output_movement_phase(display_string, False)
 		
 		display_string += "Positions (before slipstream):\n"
 		display_string += "**INSERT IMAGE HERE**\n\n"
@@ -238,10 +242,65 @@ class Stage:
 			f.write(display_string)		
 		return display_string
 
+	def _output_energy_phase(self, display_string, breakaway = False):
+		for team_name, team in self.team_dict.items():
+	
+			if FORMAT == Format.DISCOURSE:
+				display_string += "[b]{0}[/b]\n".format(team.name)
+			else:
+				display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
+			
+			for short, rider in team.riders.items():
+				
+				if (not breakaway) or (breakaway and rider.in_breakaway):
+					if FORMAT == Format.DISCOURSE:
+						display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider.message)
+						if KEEP_DECK_SECRET:
+							display_string += "[b]Hand: {0}[/b] - Recycle: {1}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.recycle_pile)))
+						else:
+							display_string += "[b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
+						display_string += "[/details]\n"
+					else:
+						display_string += "[COLOR={0}]{1}: {2}[/COLOR]\n".format(team.colour, rider.name, rider.message)
+						if KEEP_DECK_SECRET:
+							display_string += "[o][b]Hand: {0}[/b] - Recycle: {1}[/o]\n".format(",".join(sorted(rider.drawn_cards))), ",".join(sorted(rider.recycle_pile))
+						else:
+							display_string += "[o][b]Hand: {0}[/b] - Energy: {1} - Recycle: {2}[/o]\n".format(",".join(sorted(rider.drawn_cards)), ",".join(sorted(rider.energy_pile)), ",".join(sorted(rider.recycle_pile)))
+					
+					display_string += "\n"
+			
+		return display_string
+		
+	def _output_movement_phase(self, display_string, breakaway = False):
+		for team_name, team in self.team_dict.items():
+		
+			if FORMAT == Format.DISCOURSE:
+				display_string += "[b]{0}[/b]\n".format(team.name)
+			else:
+				display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
+			
+			for short, rider in team.riders.items():
+			
+				if (not breakaway) or (breakaway and rider.in_breakaway):
+					(rider_card, rider_deck) = (rider.get_last_card_played(), rider.get_deck_list())
+					
+					display_string += "{0}:\n".format(rider.name)
+					if KEEP_DECK_SECRET or breakaway:
+						display_string += "[b]Card Played: {0}[/b]\n".format(str(rider_card))
+					else:
+						display_string += "[b]Card Played: {0}[/b] - Deck: {1}\n".format(str(rider_card), ",".join(rider_deck))
+				
+			if FORMAT == Format.DISCOURSE:
+				display_string += "\n\n"
+			else:
+				display_string += "[/COLOR]\n\n"		
+		
+		return display_string
+		
 	def __str__(self):
 		display_string = "{0}\n".format(self.name)
-		for team_name in self.team_dict.keys():
-			display_string +=  "{0}\n".format(self.team_dict[team_name])
+		for team_name, team in self.team_dict.items():
+			display_string +=  "{0}\n".format(team)
 		return display_string
 		
 def load_stage(filename):
@@ -251,30 +310,4 @@ def load_stage(filename):
 		
 def store_stage(filename, stage):
 	with open(filename, 'wb') as f:
-		pickle.dump(stage, f)	
-	
-if __name__ == "__main__":
-
-	stage = Stage("Stage #1")
-	stage.add_team("Red",  "#FF0000")
-	stage.add_team("Blue", "#0000FF")
-	
-	red_team = stage.get_team("Red") 
-	blue_team = stage.get_team("Blue") 
-	
-	print(stage)
-	stage.perform_energy_phase()
-	print(stage.output_energy_phase())
-	print(stage.output_energy_phase())
-	
-	#red_team.riders[0].play_card(red_team.riders[0].drawn_cards[0])
-	red_team.play_s("r"+red_team.riders[0].drawn_cards[0])
-	red_team.add_s("r r r r")
-	print(stage)
-	print(stage.output_movement_phase())	
-	
-	#red_team.riders[0].discard_pile.append("e2")
-	#red_team.riders[0].discard_pile.append("e2")
-	#stage2 = Stage("Stage #2")
-	#stage2.from_stage(stage)
-	#print(stage2)
+		pickle.dump(stage, f)
