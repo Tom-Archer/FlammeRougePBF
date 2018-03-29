@@ -1,0 +1,25 @@
+<div class="box drawn">
+{{ name }}
+<ul class="cards">
+{% for card in cards %}
+
+    {% if card == "e2" %}
+    <li class="card ex">
+    {% else %}
+    <li class="card">
+    {% endif %}
+    
+    <a href="{{ url_for('.play', team_name = team, short = short, play = card) }}">
+    
+    {% if card == "e2" %}
+    {{ 2 }}
+    {% else %}
+    {{ card }}
+    {% endif %}
+    
+    </a>
+    </li>
+    
+{% endfor %}
+</ul>
+</div>

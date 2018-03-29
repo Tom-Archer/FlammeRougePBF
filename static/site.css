@@ -1,0 +1,89 @@
+@font-face {
+  font-family: "Verve";
+  font-style: normal;
+  font-weight: normal;
+  src: local("Verve"), url("./verve.ttf") format("truetype"); }
+
+body {
+  margin: 40px;
+  font-family: "Verve", Times, serif;
+  font-size: 18px;
+}
+
+.wrapper {
+  display: grid;
+  grid-template-columns: 300px auto auto auto 150px;
+  grid-gap: 5px;
+  background-color: #fff;
+  color: #444;
+}
+
+.box {
+  border-radius: 5px;
+  padding: 10px;
+  align-self: center;
+}
+
+.actions {
+  padding: 0px;
+}
+
+.team {
+  color:white;
+  grid-column: 1 / span 5;
+}
+
+.rider {
+  background-color: #444;
+  color: #fff;
+  grid-column: 1 / span 5;
+  margin-left : 20px;
+}
+
+.drawn {
+  margin-left : 40px;
+}
+
+
+
+
+.cards, .rider, .rider li, .rider_name, .team_name, .team_message{
+     }
+
+.team_message {
+    padding-left : 10px;
+    }
+
+.cards {
+    display:inline-block;
+    padding: 0px;
+    margin: 0px;
+    list-style-type: none;
+    vertical-align: middle;
+    }
+
+.card {
+    display:inline-block;
+    border: 1px solid black;
+    border-radius: 5px;
+    background: beige;
+    padding-top: 3px;
+    text-align: center;
+    vertical-align: middle;
+    width: 20px;
+    height: 25px;
+}
+
+.card a {
+    color: black;
+    padding: 5px;
+    text-decoration: none;
+}
+
+.card.ex {
+    color : red;
+}
+
+.card.ex a{
+    color : red;
+}

@@ -1,0 +1,16 @@
+<div class="box rider">{{ name }}: {{ message }}</div>
+{% for cards in deck %}
+    {{ cards|safe }}
+{% endfor %}
+<div class="box actions">
+{% if exhaustion %}
+<a href="{{ url_for('exhaustion', team_name = team, short = short)}}">Add Exhaustion</a></br>
+{% endif %}
+{% if breakaway %}
+<a href="{{ url_for('in_breakaway', team_name = team, short = short)}}">In Breakaway</a></br>
+{% endif %}
+{% if winlose %}
+<a href="{{ url_for('winner', team_name = team, short = short)}}">Winner</a></br>
+<a href="{{ url_for('loser', team_name = team, short = short)}}">Loser</a></br>
+{% endif %}
+</div>

@@ -1,0 +1,12 @@
+<div class="box">
+{{ name }}
+<ul class="cards">
+{% for card in cards %}
+    {% if card == "e2" %}
+    <li class="card ex">{{ 2 }}</li>
+    {% else %}
+    <li class="card">{{ card }}</li>
+    {% endif %}
+{% endfor %}
+</ul>
+</div>

@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+{% block stage %}
+<h1>{{ name }}</h1>
+<div class="wrapper stage">
+{% for team in teams %}
+    {{ team|safe }}
+{% endfor %}
+</div>
+
+{% endblock %}

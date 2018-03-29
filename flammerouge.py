@@ -18,6 +18,7 @@ class Decklist:
 		self.recycle_pile = []
 		self.discard_pile = []
 		self.drawn_cards =  []
+		self.message = ""
 		random.shuffle(self.energy_pile)
 		
 	def add_exhaustion(self):
@@ -68,8 +69,6 @@ class Decklist:
 				self.drawn_cards.append(self.energy_pile.pop(0))
 					
 	def perform_end_of_stage_actions(self):
-		# Reset breakaway flag
-		self.in_breakaway = False
 		# Remove any exhaustion cards in the discard pile
 		self.discard_pile = [c for c in self.discard_pile if c != "e2"]
 		# Move all cards back into the energy_pile
@@ -111,6 +110,11 @@ class Rider(Decklist):
 		self.name = name
 		self.short_name = short_name
 		self.in_breakaway = False
+	
+	def perform_end_of_stage_actions(self):
+		# Reset breakaway flag
+		self.in_breakaway = False
+		super().perform_end_of_stage_actions()
 		
 	def __str__(self):
 		return super().__str__()
@@ -144,7 +148,10 @@ class Team:
 	def __str__(self):
 		display_string = "{0}\n".format(self.name)
 		for short, rider in self.riders.items():
-			display_string += "{0}:\n{1}\n".format(rider.name, rider)
+                        if rider.in_breakaway:
+                            display_string += "{0} (B):\n{1}\n".format(rider.name, rider)
+                        else:
+                            display_string += "{0}:\n{1}\n".format(rider.name, rider)
 		return display_string
 		
 class Stage:
@@ -175,25 +182,18 @@ class Stage:
 			
 			for team_name, team in self.team_dict.items():
 				for short, rider in team.riders.items():
-					if self.bid_number == 1:
-						# Draw cards for all riders as if this was an energy phase
-						rider.draw_cards()
-					elif self.bid_number == 2:
-						if rider.in_breakaway:
-							# Draw cards for all riders in breakaway
-							rider.draw_cards()
+                                    if rider.in_breakaway:
+                                        # Draw cards for all riders in breakaway
+                                        rider.draw_cards()
 
 	def output_breakaway_energy_phase(self):
 		# Outputs the last breakaway energy phase
 		display_string = "[b][u]Breakaway Turn {0} - Energy Phase[/u][/b]\n\n".format(self.bid_number)
 		
-		if self.bid_number == 1:
-			display_string = self._output_energy_phase(display_string, False)
-		elif self.bid_number == 2:
-			display_string = self._output_energy_phase(display_string, True)
+		display_string = self._output_energy_phase(display_string, True)
 		
-		with open("break_energy_{0}.txt".format(self.bid_number), 'w') as f:
-			f.write(display_string)
+		#with open("break_energy_{0}.txt".format(self.bid_number), 'w') as f:
+		#	f.write(display_string)
 		return display_string
 	
 	def output_breakaway_bid_phase(self):
@@ -202,8 +202,8 @@ class Stage:
 		
 		display_string = self._output_movement_phase(display_string, True)
 			
-		with open("break_bid_{0}.txt".format(self.bid_number), 'w') as f:
-			f.write(display_string)
+		#with open("break_bid_{0}.txt".format(self.bid_number), 'w') as f:
+		#	f.write(display_string)
 		return display_string
 		
 	def perform_energy_phase(self):
@@ -219,8 +219,8 @@ class Stage:
 		
 		display_string = self._output_energy_phase(display_string, False)
 
-		with open("energy_{0}.txt".format(self.turn_number), 'w') as f:
-			f.write(display_string)
+		#with open("energy_{0}.txt".format(self.turn_number), 'w') as f:
+		#	f.write(display_string)
 		return display_string
 	
 	def output_movement_phase(self):
@@ -238,19 +238,19 @@ class Stage:
 		display_string += "**INSERT IMAGE HERE**\n\n"
 		display_string += "[b]Exhaustion card(s):[/b]"
 		
-		with open("movement_{0}.txt".format(self.turn_number), 'w') as f:
-			f.write(display_string)		
+		#with open("movement_{0}.txt".format(self.turn_number), 'w') as f:
+		#	f.write(display_string)		
 		return display_string
 
 	def _output_energy_phase(self, display_string, breakaway = False):
-		for team_name, team in self.team_dict.items():
+		for team_name, team in sorted(list(self.team_dict.items())):
 	
 			if FORMAT == Format.DISCOURSE:
 				display_string += "[b]{0}[/b]\n".format(team.name)
 			else:
 				display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
 			
-			for short, rider in team.riders.items():
+			for short, rider in sorted(list(team.riders.items())):
 				
 				if (not breakaway) or (breakaway and rider.in_breakaway):
 					if FORMAT == Format.DISCOURSE:
@@ -272,14 +272,14 @@ class Stage:
 		return display_string
 		
 	def _output_movement_phase(self, display_string, breakaway = False):
-		for team_name, team in self.team_dict.items():
+		for team_name, team in sorted(list(self.team_dict.items())):
 		
 			if FORMAT == Format.DISCOURSE:
 				display_string += "[b]{0}[/b]\n".format(team.name)
 			else:
 				display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
 			
-			for short, rider in team.riders.items():
+			for short, rider in sorted(list(team.riders.items())):
 			
 				if (not breakaway) or (breakaway and rider.in_breakaway):
 					(rider_card, rider_deck) = (rider.get_last_card_played(), rider.get_deck_list())
@@ -299,6 +299,8 @@ class Stage:
 		
 	def __str__(self):
 		display_string = "{0}\n".format(self.name)
+		display_string += "Bid Number: {0}\n".format(self.bid_number)
+		display_string += "Turn Number: {0}\n".format(self.turn_number)
 		for team_name, team in self.team_dict.items():
 			display_string +=  "{0}\n".format(team)
 		return display_string
