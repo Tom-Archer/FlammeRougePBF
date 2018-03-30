@@ -47,7 +47,6 @@ class Decklist:
         # If player has 4 cards remaining just give them all the cards
         # Else, Shuffle the recycle pile if not enough cards
         if len(self.drawn_cards) > 0:
-            print("The player is currently holding cards!")
             return
         
         self.drawn_cards = []
@@ -91,11 +90,9 @@ class Decklist:
         else:
             print("The played card '{0}' was not in the list of drawn cards!".format(card_name))
     
-    def get_last_card_played(self):
-        # Return the last played card
-        if len(self.discard_pile) > 0:
-            return self.discard_pile[-1]
-        return None
+    def get_last_cards_played(self):
+        # Return the last played cards
+        return list(reversed(self.discard_pile))
             
     def get_deck_list(self):
         return sorted(self.energy_pile + self.recycle_pile)
@@ -110,7 +107,7 @@ class Rider(Decklist):
         self.name = name
         self.short_name = short_name
         self.in_breakaway = False
-        self_finished_stage = False
+        self.finished_stage = False
     
     def perform_end_of_stage_actions(self):
         # Reset breakaway flag
@@ -213,7 +210,8 @@ class Stage:
         self.turn_number += 1
         for team_name, team in self.team_dict.items():
             for short, rider in team.riders.items():
-                rider.draw_cards()
+                if not rider.finished_stage:
+                    rider.draw_cards()
 
     def output_energy_phase(self):
         # Outputs the last energy phase
@@ -254,7 +252,7 @@ class Stage:
             
             for short, rider in sorted(list(team.riders.items())):
                 
-                if (not breakaway) or (breakaway and rider.in_breakaway):
+                if (not rider.finished_stage) and ((not breakaway) or (breakaway and rider.in_breakaway)):
                     if FORMAT == Format.DISCOURSE:
                         display_string += "[details=\"{0}: {1}\"]\n".format(rider.name, rider.message)
                         if KEEP_DECK_SECRET:
@@ -283,12 +281,25 @@ class Stage:
             
             for short, rider in sorted(list(team.riders.items())):
             
-                if (not breakaway) or (breakaway and rider.in_breakaway):
-                    (rider_card, rider_deck) = (rider.get_last_card_played(), rider.get_deck_list())
+                if (not rider.finished_stage) and ((not breakaway) or (breakaway and rider.in_breakaway)):
+                    cards_played = rider.get_last_cards_played()
+                    rider_card = None
+                    if len(cards_played) > 0:
+                        rider_card = cards_played[0]
+                    rider_deck = rider.get_deck_list()
                     
                     display_string += "{0}:\n".format(rider.name)
-                    if KEEP_DECK_SECRET or breakaway:
+                    if KEEP_DECK_SECRET:
                         display_string += "[b]Card Played: {0}[/b]\n".format(str(rider_card))
+                    elif breakaway:
+                        if self.bid_number == 1:
+                            display_string += "[b]Card Played: {0}[/b]\n".format(str(rider_card))
+                        elif self.bid_number == 2:
+                            if len(cards_played) < 2:
+                                display_string += "[b]Card Played: None[/b]\n"   
+                            else:
+                                first_bid = cards_played[1]
+                                display_string += "[b]Card Played: {0}[{1}][/b]\n".format(str(rider_card), int(rider_card) + int(first_bid))
                     else:
                         display_string += "[b]Card Played: {0}[/b] - Deck: {1}\n".format(str(rider_card), ",".join(rider_deck))
                 

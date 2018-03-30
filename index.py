@@ -45,6 +45,12 @@ def exhaustion(team_name, short):
     # update text?
     return redirect(url_for('root'))
 
+@app.route("/finished/<string:team_name>/<string:short>/")
+def finished(team_name, short):
+    team = stage.get_team(team_name)
+    team.riders[short].finished_stage = True
+    return redirect(url_for('root'))
+
 @app.route("/play/<string:team_name>/<string:short>/<string:play>")
 def play(team_name, short, play):
     team = stage.get_team(team_name)
@@ -70,14 +76,13 @@ def in_breakaway(team_name, short):
 @app.route("/breakaway")
 def breakaway():
     if not stage == None:
-        # Check that we can perform the breakaway
-        if can_perform_breakaway():
-            if not stage.breakaway:
-                stage.breakaway = True;
-            else:
-                stage.perform_breakaway_energy_phase()
-                store_phase("breakaway_"+str(stage.bid_number)+"_energy")
-                set_phase_text(stage.output_breakaway_energy_phase())
+        # Enable the rider selection
+        if not stage.breakaway:
+            stage.breakaway = True;
+        else:
+            stage.perform_breakaway_energy_phase()
+            store_phase("breakaway_"+str(stage.bid_number)+"_energy")
+            set_phase_text(stage.output_breakaway_energy_phase())
     return redirect(url_for('root'))
 
 @app.route("/energy")
@@ -167,12 +172,13 @@ def can_perform_breakaway():
         return True 
     return False
 
-def can_display_add_exhaustion():
+def can_display_rider_options(rider):
     if not stage == None:
         if stage.turn_number > 0 and all_riders_have_played_cards():
-            return True
+            if not rider.finished_stage:
+                return True
     return False
-    
+
 def can_perform_energy():
     # Check we're not bidding
     if not stage == None:
@@ -184,7 +190,7 @@ def can_perform_energy():
                 return True
     return False    
     
-    
+
     
     
     
@@ -227,7 +233,7 @@ def render_rider(rider, team_name):
     return render_template("rider.html", name=rider.name, deck=deck, team=team_name, short=rider.short_name, message=message,
                            winlose=can_display_winner_loser(rider),
                            breakaway=can_display_in_breakaway(team_name),
-                           exhaustion=can_display_add_exhaustion())
+                           options=can_display_rider_options(rider))
 
 def render_cards(pile_name, cards):
     return render_template("cards.html", name=pile_name, cards=cards)

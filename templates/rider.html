@@ -3,8 +3,9 @@
     {{ cards|safe }}
 {% endfor %}
 <div class="box actions">
-{% if exhaustion %}
+{% if options %}
 <a href="{{ url_for('exhaustion', team_name = team, short = short)}}">Add Exhaustion</a></br>
+<a href="{{ url_for('finished', team_name = team, short = short)}}">Finished</a></br>
 {% endif %}
 {% if breakaway %}
 <a href="{{ url_for('in_breakaway', team_name = team, short = short)}}">In Breakaway</a></br>
