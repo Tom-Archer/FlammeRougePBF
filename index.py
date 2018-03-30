@@ -372,7 +372,7 @@ def render_team(team):
     r, g, b = bytearray.fromhex(team.colour.lstrip('#'))
     y = 0.2126 * pow((r/255),2.2) +  0.7151 * pow((g/255),2.2)  +  0.0721 * pow((b/255),2.2)
     text_colour = "black"
-    if y < 0.18:
+    if y < 0.30:
         text_colour = "white"
     return render_template("team.html", name=team.name, riders=riders,
                            colour=team.colour, text_colour=text_colour, player=team.player)
@@ -399,6 +399,8 @@ def render_rider_title(rider, team_name):
     message = rider.message
     if rider.in_breakaway:
         message = "In Breakaway!"
+    elif rider.finished_stage:
+        message = "Finished Stage!"
     return render_template("rider_title.html", name=rider.name, short=rider.short_name,
                            team=team_name, message=message)
 

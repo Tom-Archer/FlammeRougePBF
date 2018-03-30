@@ -45,8 +45,8 @@ body {
 }
 
 .rider {
-  background-color: #444;
-  color: #fff;
+  background-color: #F2F2F2;
+  color: black;
   grid-column: 1 / span 5;
   margin-left : 20px;
 }
