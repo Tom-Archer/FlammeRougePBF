@@ -1,0 +1,32 @@
+{% extends "index.html" %}
+{% block view_stages %}
+<a href="{{ url_for('root')}}"> &lt;&lt; Home</a>
+<script>
+    var files = {{files | safe}};
+    
+    $( document ).ready(function() {
+        
+        $.each(files, function (index, value) {
+                $('#file_list').append($('<option>', { 
+                    value: value,
+                    text : value 
+                }));
+            });
+        
+    });
+
+</script>
+<h1>New Stage From Existing</h1>
+  <form action="{{ url_for('create_stage_from') }}" method=post>
+  <dl>
+    <dt>Existing Stage:</dt>
+    <dd>
+      <input type="text" name="stage_name" readonly value="{{stage_name}}">
+      <select id="file_list" name="stage_file">
+      </select>
+    <dt>New Stage Name:
+    <dd><input type="text" name="new_stage_name">
+    <dt><input type="submit" value="Create">
+  </dl>
+  </form>
+{% endblock %}

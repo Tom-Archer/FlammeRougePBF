@@ -9,5 +9,8 @@
 {% if turn_order %}
 <li><a onclick="perform_action('{{ url_for('determine_turn_order')}}');">Determine Turn Order</a></li>
 {% endif %}
+{% if next_stage %}
+<li><a href="{{ url_for('new_stage_from')}}">Create Next Stage</a></li>
+{% endif %}
 </ul>
 </div>

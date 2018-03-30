@@ -1,6 +1,6 @@
 {% extends "index.html" %}
 {% block new_stage %}
-<a href="{{ url_for('root')}}"> &lt;&lt; Back</a>
+<a href="{{ url_for('root')}}"> &lt;&lt; Home</a>
 <h1>Create Stage</h1>
   <form action="{{ url_for('create_stage') }}" method=post>
     <dl>
@@ -13,7 +13,7 @@
       <dd>Player:<input type=text name=team_player_{{i}}>
       <dd>Colour:<input type=text name=team_colour_{{i}} value={{colour}}>
       {% endfor %}
-      <dd><input type=submit value=Create>
+      <dt><input type=submit value=Create>
     </dl>
   </form>
 {% endblock %}

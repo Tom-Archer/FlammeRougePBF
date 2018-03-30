@@ -1,0 +1,42 @@
+{% extends "index.html" %}
+{% block view_stages %}
+<a href="{{ url_for('root')}}"> &lt;&lt; Home</a>
+<script>
+    var files = {{files | safe}};
+    
+    $( document ).ready(function() {
+        
+        $('#stage_list').on('change', function() {
+            
+            $('#file_list').html("");
+            $.each(files[this.value], function (index, value) {
+                $('#file_list').append($('<option>', { 
+                    value: value,
+                    text : value 
+                }));
+            });
+        })
+        
+        $("#stage_list").val($("#file_list option:first").val());
+        $.each(files[$('#stage_list').find(":selected").text()], function (index, value) {
+                $('#file_list').append($('<option>', { 
+                    value: value,
+                    text : value 
+                }));
+            });
+        
+    });
+
+</script>
+<h1>Load Stage</h1>
+  <form action="{{ url_for('load_stage_state') }}" method=post>
+    <select id="stage_list" name="stage_name">
+    {% for stage_name in stage_names %}
+      <option value="{{stage_name}}">{{stage_name}}</option>
+    {% endfor %}
+    </select>
+    <select id="file_list" name="stage_file">
+    </select>
+    <input type=submit value=Load>
+  </form>
+{% endblock %}

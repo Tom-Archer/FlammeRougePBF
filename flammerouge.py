@@ -76,10 +76,12 @@ class Decklist:
         # Remove half of the exhaustion cards
         self.energy_pile.sort()
         ex_count = self.energy_pile.count("e2")
-        for i in range(0, ex_count - math.ceil(ex_count / 2.0)):
+        ex_count_end = math.ceil(ex_count / 2.0)
+        for i in range(0, ex_count - ex_count_end):
             self.energy_pile.remove("e2")
         # Shuffle the deck
-        random.shuffle(self.energy_pile)	
+        random.shuffle(self.energy_pile)
+        return (ex_count, ex_count_end)
         
     def play_card(self, card_name):
         # Take the played card from the drawn cards and recycle the drawn cards
@@ -112,7 +114,7 @@ class Rider(Decklist):
         # Reset breakaway flag
         self.in_breakaway = False
         self.finished_stage = False
-        super().perform_end_of_stage_actions()
+        return super().perform_end_of_stage_actions()
         
     def __str__(self):
         return super().__str__()
@@ -163,11 +165,24 @@ class Stage:
         
     def from_stage(self, previous_stage):
         # Take the result of the previous stage and create this new stage
+        display_string = "[b][u]Exhaustion cards carried over to {0}[/u]\n".format(self.name)
+        
         self.team_dict = previous_stage.team_dict
         # Sort out all the decks
         for team_name, team in self.team_dict.items():
+            
+            if FORMAT == Format.BBCODE:
+                display_string += "[COLOR={0}]".format(team.colour)
+            
             for short, rider in team.riders.items():
-                rider.perform_end_of_stage_actions()
+                (start, finish) = rider.perform_end_of_stage_actions()
+                display_string += "{0} {1}: {2} -> {3}\n".format(team_name, rider.name, start, finish)
+                
+            if FORMAT == Format.BBCODE:
+                display_string += "[/COLOR]"
+                
+        display_string += "[/b]"
+        return display_string
         
     def add_team(self, team_name, team_player, team_colour):
         self.team_dict[team_name] = Team(team_name, team_player, team_colour)
