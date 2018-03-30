@@ -1,0 +1,13 @@
+<div id="stage-actions">
+<ul>
+{% if breakaway %}
+<li><a href="{{ url_for('breakaway')}}">Perform Breakaway</a></li>
+{% endif %}
+{% if energy %}
+<li><a href="{{ url_for('energy')}}">Perform Energy Phase</a></li>
+{% endif %}
+{% if turn_order %}
+<li><a onclick="perform_action('{{ url_for('determine_turn_order')}}');">Determine Turn Order</a></li>
+{% endif %}
+</ul>
+</div>

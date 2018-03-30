@@ -2,30 +2,35 @@
 <html>
 <head>
     <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='site.css') }}">
-    <script type="text/javascript" src="{{url_for('static', filename='jquery-1.9.1.js') }}"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.9.1.js"></script>
     <style>
 </style>
 </head>
 <body>
+
+<script type="text/javascript">
+
+function perform_action(action)
+{
+  $.getJSON(action, function( data ) {
+    for (var key in data)
+    {
+        if (key == "#stage-output")
+        {
+            $(key).html(data[key]);
+        }
+        else
+        {
+            $(key).replaceWith(data[key]);
+        }
+    }
+  });
+};
+</script>
+
+<div id="status"></div>
 {% block stage %}{% endblock %}
-
-<u>Stage Actions</u>
-<ul>
-<li>Load Stage</li>
-<li>Add Team</li>
-{% if breakaway %}
-<li><a href="{{ url_for('breakaway')}}">Perform Breakaway</a></li>
-{% endif %}
-{% if energy %}
-<li><a href="{{ url_for('energy')}}">Perform Energy Phase</a></li>
-{% endif %}
-</ul>
-
-<u>Stage Output</u><br>
-<textarea rows="10" cols="100">
-{{phase_text}}
-</textarea>
-
-<!-- stage automatically saves to "Stage Name/number_m/e" each phase -->
+{% block stage_options %}{% endblock %}
+{% block new_stage %}{% endblock %}
 </body>
 </html>

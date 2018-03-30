@@ -1,0 +1,10 @@
+{% extends "index.html" %}
+{% block stage_options %}
+<h1>Stage Options</h1>
+<ul>
+
+<li>Current Stage: {% if current_stage %}<a href="{{ url_for('stage')}}">{{ current_stage }}</a>{% endif %}</li>
+<li>Load Stage</li>
+<li><a href="{{ url_for('new_stage')}}">New Stage</a> {% if current_stage %}<a href="">(from current)</a>{% endif %}</li>
+</ul>
+{% endblock %}

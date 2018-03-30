@@ -5,7 +5,7 @@
   src: local("Verve"), url("./verve.ttf") format("truetype"); }
 
 body {
-  margin: 40px;
+  margin: 20px;
   font-family: "Verve", Times, serif;
   font-size: 18px;
 }
@@ -28,6 +28,17 @@ body {
   padding: 0px;
 }
 
+#stage-actions a
+{
+    cursor:pointer;
+    color: blue;
+    text-decoration: none; 
+}
+
+.actions a {
+    cursor:pointer;
+    }
+
 .team {
   color:white;
   grid-column: 1 / span 5;
@@ -43,9 +54,6 @@ body {
 .drawn {
   margin-left : 40px;
 }
-
-
-
 
 .cards, .rider, .rider li, .rider_name, .team_name, .team_message{
      }
@@ -74,9 +82,14 @@ body {
     height: 25px;
 }
 
-.card a {
-    color: black;
+.box a {
+    color: blue;
     padding: 5px;
+}
+
+.card a {
+    cursor:pointer;
+    color: black;
     text-decoration: none;
 }
 

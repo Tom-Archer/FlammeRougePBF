@@ -1,5 +1,6 @@
 {% extends "index.html" %}
 {% block stage %}
+<a href="{{ url_for('root')}}"> &lt;&lt; Back</a>
 <h1>{{ name }}</h1>
 <div class="wrapper stage">
 {% for team in teams %}
@@ -7,4 +8,14 @@
 {% endfor %}
 </div>
 
+<h2>Stage Actions</h2>
+{{ actions|safe }}
+
+
+<h2>Stage Output<h2>
+<div>
+<textarea id="stage-output" rows="20" cols="100">
+{{phase_text}}
+</textarea>
+</div>
 {% endblock %}

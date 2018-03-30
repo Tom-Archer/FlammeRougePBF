@@ -1,0 +1,19 @@
+{% extends "index.html" %}
+{% block new_stage %}
+<a href="{{ url_for('root')}}"> &lt;&lt; Back</a>
+<h1>Create Stage</h1>
+  <form action="{{ url_for('create_stage') }}" method=post>
+    <dl>
+      <dt>Stage Name:
+      <dd><input type=text name=stage_name>
+      {% for i, name, colour in [(1,"Red","#CD4C32"),   (2,"Blue","#3D7399"),  (3,"Green","#18A561"),
+                                 (4,"Black","#4E4946"), (5,"White","#DAD5BD"), (6,"Pink","#F48D7C")] %}
+      <dt>Team {{i}}:
+      <dd>Name: <input type=text name=team_name_{{i}} value={{name}} readonly>
+      <dd>Player:<input type=text name=team_player_{{i}}>
+      <dd>Colour:<input type=text name=team_colour_{{i}} value={{colour}}>
+      {% endfor %}
+      <dd><input type=submit value=Create>
+    </dl>
+  </form>
+{% endblock %}

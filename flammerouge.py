@@ -1,4 +1,5 @@
 import math
+import os
 import pickle
 import random
 from enum import Enum
@@ -87,8 +88,6 @@ class Decklist:
             self.drawn_cards.remove(card_name)
             self.recycle_pile += self.drawn_cards
             self.drawn_cards = []
-        else:
-            print("The played card '{0}' was not in the list of drawn cards!".format(card_name))
     
     def get_last_cards_played(self):
         # Return the last played cards
@@ -119,8 +118,9 @@ class Rider(Decklist):
         return super().__str__()
         
 class Team:
-    def __init__(self, name, colour):
+    def __init__(self, name, player, colour):
         self.name = name
+        self.player = player
         self.colour = colour
         self.riders = {}
         self.riders["R"] = Rider("Rouleur", "R", [3,3,3,4,4,4,5,5,5,6,6,6,7,7,7])
@@ -145,12 +145,12 @@ class Team:
                 rider.add_exhaustion()
         
     def __str__(self):
-        display_string = "{0}\n".format(self.name)
+        display_string = "{0} ({1})\n".format(self.name, self.player)
         for short, rider in self.riders.items():
-                        if rider.in_breakaway:
-                            display_string += "{0} (B):\n{1}\n".format(rider.name, rider)
-                        else:
-                            display_string += "{0}:\n{1}\n".format(rider.name, rider)
+            if rider.in_breakaway:
+                display_string += "{0} (B):\n{1}\n".format(rider.name, rider)
+            else:
+                display_string += "{0}:\n{1}\n".format(rider.name, rider)
         return display_string
         
 class Stage:
@@ -159,6 +159,7 @@ class Stage:
         self.team_dict = {}
         self.turn_number = 0
         self.bid_number = 0
+        self.breakaway_started = False;
         
     def from_stage(self, previous_stage):
         # Take the result of the previous stage and create this new stage
@@ -168,22 +169,21 @@ class Stage:
             for short, rider in team.riders.items():
                 rider.perform_end_of_stage_actions()
         
-    def add_team(self, team_name, team_colour):
-        self.team_dict[team_name] = Team(team_name, team_colour)
+    def add_team(self, team_name, team_player, team_colour):
+        self.team_dict[team_name] = Team(team_name, team_player, team_colour)
     
     def get_team(self, team_name):
         return self.team_dict[team_name]
 
     def perform_breakaway_energy_phase(self):
-        # Perform breakaway if stage hasn't begun
-        if (self.turn_number == 0):
-            self.bid_number += 1
-            
-            for team_name, team in self.team_dict.items():
-                for short, rider in team.riders.items():
-                                    if rider.in_breakaway:
-                                        # Draw cards for all riders in breakaway
-                                        rider.draw_cards()
+        self.breakaway_started = True;
+        # Perform breakaway
+        self.bid_number += 1     
+        for team_name, team in self.team_dict.items():
+            for short, rider in team.riders.items():
+                if rider.in_breakaway:
+                    # Draw cards for all riders in breakaway
+                    rider.draw_cards()
 
     def output_breakaway_energy_phase(self):
         # Outputs the last breakaway energy phase
@@ -206,6 +206,7 @@ class Stage:
         return display_string
         
     def perform_energy_phase(self):
+        self.breakaway_started = False;
         # Performs card draws for each rider
         self.turn_number += 1
         for team_name, team in self.team_dict.items():
@@ -236,7 +237,7 @@ class Stage:
         display_string += "[b][u]Turn {0} - End Phase[/u][/b]\n".format(self.turn_number)
         display_string += "Positions (after slipstream):\n"
         display_string += "**INSERT IMAGE HERE**\n\n"
-        display_string += "[b]Exhaustion card(s):[/b]"
+        display_string += "[b]Exhaustion card(s):[/b]\n"
         
         #with open("movement_{0}.txt".format(self.turn_number), 'w') as f:
         #	f.write(display_string)		
@@ -246,9 +247,9 @@ class Stage:
         for team_name, team in sorted(list(self.team_dict.items())):
     
             if FORMAT == Format.DISCOURSE:
-                display_string += "[b]{0}[/b]\n".format(team.name)
+                display_string += "[b]{0} ({1})[/b]\n".format(team.name, team.player)
             else:
-                display_string += "[COLOR={0}][b]{1}[/b][/COLOR]\n".format(team.colour, team.name)
+                display_string += "[COLOR={0}][b]{1} ({2})[/b][/COLOR]\n".format(team.colour, team.name, team.player)
             
             for short, rider in sorted(list(team.riders.items())):
                 
@@ -275,9 +276,9 @@ class Stage:
         for team_name, team in sorted(list(self.team_dict.items())):
         
             if FORMAT == Format.DISCOURSE:
-                display_string += "[b]{0}[/b]\n".format(team.name)
+                display_string += "[b]{0} ({1})[/b]\n".format(team.name, team.player)
             else:
-                display_string += "[COLOR={0}][b]{1}[/b]\n".format(team.colour, team.name)
+                display_string += "[COLOR={0}][b]{1} ({2})[/b]\n".format(team.colour, team.name, team.player)
             
             for short, rider in sorted(list(team.riders.items())):
             
@@ -326,3 +327,6 @@ def load_stage(filename):
 def store_stage(filename, stage):
     with open(filename, 'wb') as f:
         pickle.dump(stage, f)
+    # Update owner
+    os.chown(filename, int(os.getenv('SUDO_UID')), int(os.getenv('SUDO_GID')))
+    

@@ -1,5 +1,5 @@
-<div class="box drawn">
-{{ name }}
+<div id="{{team}}-{{short}}-cards-{{name}}" class="box drawn">
+{{ name }}:
 <ul class="cards">
 {% for card in cards %}
 
@@ -9,7 +9,7 @@
     <li class="card">
     {% endif %}
     
-    <a href="{{ url_for('.play', team_name = team, short = short, play = card) }}">
+    <a onclick="perform_action('{{ url_for('.play', team_name = team, short = short, play = card) }}');">
     
     {% if card == "e2" %}
     {{ 2 }}

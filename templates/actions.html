@@ -1,0 +1,13 @@
+<div id="{{team}}-{{short}}-actions" class="box actions">
+{% if options %}
+<a onclick="perform_action('{{ url_for('exhaustion', team_name = team, short = short)}}');")>Add Exhaustion</a></br>
+<a onclick="perform_action('{{ url_for('finished', team_name = team, short = short)}}');">Finished</a></br>
+{% endif %}
+{% if breakaway %}
+<a onclick="perform_action('{{ url_for('in_breakaway', team_name = team, short = short)}}');">In Breakaway</a></br>
+{% endif %}
+{% if winlose %}
+<a onclick="perform_action('{{ url_for('winner', team_name = team, short = short)}}');">Winner</a></br>
+<a onclick="perform_action('{{ url_for('loser', team_name = team, short = short)}}');">Loser</a></br>
+{% endif %}
+</div>
