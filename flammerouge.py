@@ -11,6 +11,7 @@ class Format(Enum):
     BBCODE = 1
     DISCOURSE = 2
     
+# Determines the phase output format
 FORMAT = Format.DISCOURSE
 
 class Decklist:
@@ -44,12 +45,13 @@ class Decklist:
         random.shuffle(self.energy_pile)
         
     def draw_cards(self):
-        # Take 4 cards from the top of the draw pile 
-        # If player has 4 cards remaining just give them all the cards
-        # Else, Shuffle the recycle pile if not enough cards
+        # Prevent drawing cards if hand is not empty
         if len(self.drawn_cards) > 0:
             return
         
+        # If energy pile has more than 4 cards, take 4 cards from the top
+        # If player has 4 cards (or fewer) remaining return all the cards
+        # Else, shuffle the recycle pile and draw
         self.drawn_cards = []
         self.message = ""
         
@@ -84,7 +86,7 @@ class Decklist:
         return (ex_count, ex_count_end)
         
     def play_card(self, card_name):
-        # Take the played card from the drawn cards and recycle the drawn cards
+        # Discard the played card and recycle the remaining drawn cards
         if card_name in self.drawn_cards:
             self.discard_pile.append(card_name)
             self.drawn_cards.remove(card_name)
@@ -99,7 +101,6 @@ class Decklist:
         return sorted(self.energy_pile + self.recycle_pile)
     
     def __str__(self):
-        # This gives the behind the scenes info
         return "Hand: {0} - Energy: {1} - Recycle: {2} - Discard: {3}\n".format(",".join(self.drawn_cards), ",".join(self.energy_pile), ",".join(self.recycle_pile), ",".join(self.discard_pile))
     
 class Rider(Decklist):
@@ -113,6 +114,7 @@ class Rider(Decklist):
     def perform_end_of_stage_actions(self):
         # Reset breakaway flag
         self.in_breakaway = False
+        # Reset finished flag
         self.finished_stage = False
         return super().perform_end_of_stage_actions()
         
@@ -191,13 +193,14 @@ class Stage:
         return self.team_dict[team_name]
 
     def perform_breakaway_energy_phase(self):
-        self.breakaway_started = True;
         # Perform breakaway
-        self.bid_number += 1     
+        self.breakaway_started = True;
+        self.bid_number += 1
+        
+        # Draw cards for all riders in breakaway
         for team_name, team in self.team_dict.items():
             for short, rider in team.riders.items():
                 if rider.in_breakaway:
-                    # Draw cards for all riders in breakaway
                     rider.draw_cards()
 
     def output_breakaway_energy_phase(self):
@@ -206,8 +209,6 @@ class Stage:
         
         display_string = self._output_energy_phase(display_string, True)
         
-        #with open("break_energy_{0}.txt".format(self.bid_number), 'w') as f:
-        #	f.write(display_string)
         return display_string
     
     def output_breakaway_bid_phase(self):
@@ -216,12 +217,11 @@ class Stage:
         
         display_string = self._output_movement_phase(display_string, True)
             
-        #with open("break_bid_{0}.txt".format(self.bid_number), 'w') as f:
-        #	f.write(display_string)
         return display_string
         
     def perform_energy_phase(self):
         self.breakaway_started = False;
+        
         # Performs card draws for each rider
         self.turn_number += 1
         for team_name, team in self.team_dict.items():
@@ -235,8 +235,6 @@ class Stage:
         
         display_string = self._output_energy_phase(display_string, False)
 
-        #with open("energy_{0}.txt".format(self.turn_number), 'w') as f:
-        #	f.write(display_string)
         return display_string
     
     def output_movement_phase(self):
@@ -253,9 +251,7 @@ class Stage:
         display_string += "Positions (after slipstream):\n"
         display_string += "**INSERT IMAGE HERE**\n\n"
         display_string += "[b]Exhaustion card(s):[/b]\n"
-        
-        #with open("movement_{0}.txt".format(self.turn_number), 'w') as f:
-        #	f.write(display_string)		
+        	
         return display_string
 
     def _output_energy_phase(self, display_string, breakaway = False):
@@ -342,6 +338,3 @@ def load_stage(filename):
 def store_stage(filename, stage):
     with open(filename, 'wb') as f:
         pickle.dump(stage, f)
-    # Update owner
-    os.chown(filename, int(os.getenv('SUDO_UID')), int(os.getenv('SUDO_GID')))
-    
