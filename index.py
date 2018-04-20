@@ -161,10 +161,12 @@ def play(team_name, short, play):
     
     if current_stage.breakaway_started:
         store_phase("breakaway_"+str(current_stage.bid_number)+"_movement")
-        set_phase_text(current_stage.output_breakaway_bid_phase())
+        if all_riders_have_played_cards(True):
+            set_phase_text(current_stage.output_breakaway_bid_phase())
     else:   
         store_phase(str(current_stage.turn_number)+"_movement")
-        set_phase_text(current_stage.output_movement_phase())
+        if all_riders_have_played_cards():
+            set_phase_text(current_stage.output_movement_phase())
 
     return json_update_rider(team.riders[short], team_name)
 
@@ -259,6 +261,8 @@ def create_folder_for_stage(path):
     else:
         # Create directory
         os.makedirs(path)
+        # Update owner
+        os.chown(path, int(os.getenv('SUDO_UID')), int(os.getenv('SUDO_GID')))
         
 def all_teams_have_nominated_rider():
     """Returns True if all Teams have a nominated Rider."""

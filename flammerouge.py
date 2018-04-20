@@ -58,6 +58,9 @@ class Decklist:
         if len(self.energy_pile) >= 4:
             for i in range(0,4):
                 self.drawn_cards.append(self.energy_pile.pop(0))
+        elif len(self.energy_pile) + len(self.recycle_pile) == 0:
+            self.message = "(No cards left in deck)"
+            self.drawn_cards = ['e2']
         elif len(self.energy_pile) + len(self.recycle_pile) < 4:
             self.message = "(4 or fewer cards left in deck)"
             self.drawn_cards = self.energy_pile + self.recycle_pile
@@ -71,6 +74,7 @@ class Decklist:
                 self.drawn_cards.append(self.energy_pile.pop(0))
                     
     def perform_end_of_stage_actions(self):
+        self.message = ""
         # Remove any exhaustion cards in the discard pile
         self.discard_pile = [c for c in self.discard_pile if c != "e2"]
         # Move all cards back into the energy_pile
@@ -167,7 +171,7 @@ class Stage:
         
     def from_stage(self, previous_stage):
         # Take the result of the previous stage and create this new stage
-        display_string = "[b][u]Exhaustion cards carried over to {0}[/u]\n".format(self.name)
+        display_string = "[b][u]Exhaustion cards carried over to {0}[/u][/b]\n".format(self.name)
         
         self.team_dict = previous_stage.team_dict
         # Sort out all the decks
@@ -183,7 +187,6 @@ class Stage:
             if FORMAT == Format.BBCODE:
                 display_string += "[/COLOR]"
                 
-        display_string += "[/b]"
         return display_string
         
     def add_team(self, team_name, team_player, team_colour):
