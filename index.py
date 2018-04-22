@@ -246,11 +246,11 @@ def store_phase(filename):
     
 def get_stage_list():
     """Return a list of all stored Stages."""
-    return sorted(os.listdir(stages_dir))
+    return sorted(os.listdir(stages_dir), reverse=True)
 
 def get_files_for_stage(stage_name):
     """Return a list of all files for the specified Stage."""
-    return sorted(os.listdir(os.path.join(stages_dir,stage_name)), key=lambda x: os.path.getctime(os.path.join(stages_dir,stage_name,x)));    
+    return sorted(os.listdir(os.path.join(stages_dir,stage_name)), key=lambda x: os.path.getctime(os.path.join(stages_dir,stage_name,x)), reverse=True);    
 
 def create_folder_for_stage(path):
     """Creates a folder at the provided path."""

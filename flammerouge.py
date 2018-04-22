@@ -314,7 +314,10 @@ class Stage:
                                 display_string += "[b]Card Played: None[/b]\n"   
                             else:
                                 first_bid = cards_played[1]
-                                display_string += "[b]Card Played: {0}[{1}][/b]\n".format(str(rider_card), int(rider_card) + int(first_bid))
+                                first_bid_int = self._card_to_int(first_bid)
+                                rider_card_int = self._card_to_int(rider_card)
+                                
+                                display_string += "[b]Card Played: {0}[{1}][/b]\n".format(str(rider_card), rider_card_int + first_bid_int)
                     else:
                         display_string += "[b]Card Played: {0}[/b] - Deck: {1}\n".format(str(rider_card), ",".join(rider_deck))
                 
@@ -324,7 +327,13 @@ class Stage:
                 display_string += "[/COLOR]\n\n"		
         
         return display_string
-        
+     
+    def _card_to_int(self, card_string):
+        if card_string == "e2":
+            return 2
+        else:
+            return int(card_string)                                               
+                                                        
     def __str__(self):
         display_string = "{0}\n".format(self.name)
         display_string += "Bid Number: {0}\n".format(self.bid_number)
